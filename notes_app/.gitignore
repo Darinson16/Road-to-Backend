@@ -1,0 +1,12 @@
+# macOS
+.DS_Store
+
+# Environment & secrets
+.env
+
+# Build artifacts
+tmp/
+*.log
+
+# Binaries
+/tmp/main

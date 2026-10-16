@@ -1,0 +1,810 @@
+basePath: /api/v1
+definitions:
+  dtos.ChangeRolesRequest:
+    properties:
+      roleId:
+        type: integer
+      userId:
+        type: integer
+    required:
+    - roleId
+    - userId
+    type: object
+  dtos.ErrorResponse:
+    properties:
+      code:
+        type: integer
+      details:
+        type: string
+    type: object
+  dtos.LoginRequest:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    required:
+    - email
+    - password
+    type: object
+  dtos.NoteRequest:
+    properties:
+      priority:
+        type: integer
+      text:
+        type: string
+    required:
+    - priority
+    - text
+    type: object
+  dtos.ResponseStruct:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/dtos.ErrorResponse'
+      message:
+        type: string
+      success:
+        type: boolean
+    type: object
+  dtos.SignUpRequest:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phoneNumber:
+        type: string
+      updatedAt:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    type: object
+  dtos.UpdateUserRequest:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      phoneNumber:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - phoneNumber
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Notes API with JWT authentication and RBAC authorization (HasAccess).
+  title: NotesGo API
+  version: "1.0"
+paths:
+  /actions/:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of actions
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List all actions
+      tags:
+      - actions
+  /actions/{id}:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Action id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the action
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Get an action by id
+      tags:
+      - actions
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Returns a raw JWT (no Bearer prefix) to send in the Authorization
+        header.
+      parameters:
+      - description: Login payload
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data holds the token
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      summary: Log in and get a JWT
+      tags:
+      - auth
+  /auth/signup:
+    post:
+      consumes:
+      - application/json
+      description: Creates a user with the default User role (role_id 3).
+      parameters:
+      - description: Signup payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.SignUpRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data holds the created user id
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      summary: Sign up a new user
+      tags:
+      - auth
+  /health:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Service status
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Healthcheck
+      tags:
+      - health
+  /notes/:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of notes with user info
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read or Manager:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List all notes
+      tags:
+      - notes
+    post:
+      consumes:
+      - application/json
+      description: Owner is taken from the JWT context.
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note payload
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.NoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data holds the created note id
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Add, Manager:Add or User:Add
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a note for the authenticated user
+      tags:
+      - notes
+  /notes/{id}:
+    delete:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the deleted id
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Delete
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a note
+      tags:
+      - notes
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the note
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read or Manager:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a note by id
+      tags:
+      - notes
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Note id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Note payload
+        in: body
+        name: note
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.NoteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the updated note
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Update or Manager:Update
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a note
+      tags:
+      - notes
+  /notes/user:
+    get:
+      description: User id is taken from the JWT context, not from the URL.
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of notes
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read, Manager:Read or User:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List notes of the authenticated user
+      tags:
+      - notes
+  /permissions/:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of role/action pairs
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List role-action permissions
+      tags:
+      - permissions
+  /roles/:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of roles
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List all roles
+      tags:
+      - roles
+  /roles/{id}:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Role id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the role
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a role by id
+      tags:
+      - roles
+  /users/:
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is a list of users
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read or Manager:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: List all users
+      tags:
+      - users
+  /users/{id}:
+    delete:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the deleted id
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Delete
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a user
+      tags:
+      - users
+    get:
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the user
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Read or Manager:Read
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Get a user by id
+      tags:
+      - users
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User id
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: User payload
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.UpdateUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the updated user
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Update or Manager:Update
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a user
+      tags:
+      - users
+  /users/change-role:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Raw JWT from /auth/login
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User and role ids
+        in: body
+        name: roles
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.ChangeRolesRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Envelope; data is the updated user
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "403":
+          description: Missing Admin:Update
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/dtos.ResponseStruct'
+      security:
+      - ApiKeyAuth: []
+      summary: Change a user's role
+      tags:
+      - users
+securityDefinitions:
+  ApiKeyAuth:
+    description: Raw JWT from POST /auth/login (no Bearer prefix).
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
