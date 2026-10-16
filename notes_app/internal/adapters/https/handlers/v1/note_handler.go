@@ -56,7 +56,7 @@ func (h *NoteHandler) GetAll(ctx *gin.Context) {
 		notesResponse = append(notesResponse, dtos.ToGetAllNoteResponse(&note))
 	}
 
-	dtos.SendSuccessResponse(ctx, http.StatusOK, "", notesResponse)
+	dtos.SendSuccessResponse(ctx, http.StatusOK, "Notes fetched correctly!", notesResponse)
 }
 
 // GetAllByUserId godoc

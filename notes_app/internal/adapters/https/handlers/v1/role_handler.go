@@ -48,7 +48,7 @@ func (h *RoleHandler) GetAll(ctx *gin.Context) {
 		rolesResponse = append(rolesResponse, dtos.ToRoleResponse(&role))
 	}
 
-	dtos.SendSuccessResponse(ctx, http.StatusOK, "", rolesResponse)
+	dtos.SendSuccessResponse(ctx, http.StatusOK, "Roles data fetched correctly!", rolesResponse)
 }
 
 // GetById godoc
